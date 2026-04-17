@@ -127,6 +127,7 @@ def run_cli_once(
     api_base: Optional[str],
     api_version: Optional[str],
     organization: Optional[str],
+    timeout_s: int = 600,
     max_retries: int = 3,
     base_backoff_s: float = 1.5,
 ) -> Dict[str, Any]:
@@ -162,13 +163,24 @@ def run_cli_once(
     attempt = 0
     while True:
         attempt += 1
-        p = subprocess.run(
-            cmd,
-            input=note_text,
-            text=True,
-            capture_output=True,
-            check=False,
-        )
+        try:
+            p = subprocess.run(
+                cmd,
+                input=note_text,
+                text=True,
+                capture_output=True,
+                check=False,
+                timeout=timeout_s,
+            )
+        except subprocess.TimeoutExpired as exc:
+            if attempt > max_retries:
+                return {
+                    "_error": "cli_timeout",
+                    "_raw_stdout": (exc.stdout or "").strip() if exc.stdout else "",
+                    "_raw_stderr": (exc.stderr or "").strip() if exc.stderr else "",
+                }
+            time.sleep(base_backoff_s ** attempt)
+            continue
 
         out = (p.stdout or "").strip()
         err = (p.stderr or "").strip()
@@ -340,6 +352,7 @@ def main():
     ap.add_argument("--rps", type=float, default=None, help="Max requests per second.")
     ap.add_argument("--rpm", type=int, default=60, help="Max requests per minute. Default 60.")
     ap.add_argument("--max-retries", type=int, default=3, help="Retries per note on transient errors.")
+    ap.add_argument("--timeout-s", type=int, default=600, help="Per-note timeout for child CLI subprocess.")
     ap.add_argument("--checkpoint-every", type=int, default=25, help="Write partial outputs every N rows.")
     ap.add_argument("--json-out", default=None, help="Also write raw JSON list to this path.")
     ap.add_argument("--num-shards", type=int, default=1, help="Total number of shards.")
@@ -420,6 +433,7 @@ def main():
             api_base=args.api_base,
             api_version=args.api_version,
             organization=args.organization,
+            timeout_s=args.timeout_s,
             max_retries=args.max_retries,
         )
         limiter.hit()

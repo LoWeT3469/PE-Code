@@ -9,7 +9,7 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
 #SBATCH --gres=gpu:1
-#SBATCH --array=0-7%4
+#SBATCH --array=0-15%4
 #SBATCH --time=6-23:59:59
 #SBATCH --output=./%x-%A_%a.out
 #SBATCH --error=./%x-%A_%a.err
@@ -53,11 +53,11 @@ export MISTRAL_MODEL_DIR="/nfs/turbo/umms-atjanke/liuwent/Notes_Feature_Abstract
 # ------------------------------------------------------------------
 export MISTRAL_USE_4BIT=0
 export MISTRAL_DTYPE="bfloat16"
-export MISTRAL_MAX_NEW_TOKENS=1200
+export MISTRAL_MAX_NEW_TOKENS=128
 export MISTRAL_TEMPERATURE=0.0
 export MISTRAL_USE_CACHE=0
-export MISTRAL_CHUNK_TOKENS=9000
-export MISTRAL_MAX_CHUNKS=0
+export MISTRAL_CHUNK_TOKENS=1500
+export MISTRAL_MAX_CHUNKS=5
 
 export PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True"
 export TOKENIZERS_PARALLELISM=false
@@ -132,7 +132,7 @@ fi
 # Run shard
 # ------------------------------------------------------------------
 echo "=== RUN BATCH SHARD ==="
-NUM_SHARDS=8
+NUM_SHARDS="${NUM_SHARDS:-16}"
 SHARD="${ARRAY_TASK_ID}"
 
 python -u ./batch-abstract-notes-logged_Mistral7B.py \
@@ -146,7 +146,6 @@ python -u ./batch-abstract-notes-logged_Mistral7B.py \
   --num-shards ${NUM_SHARDS} \
   --shard-index ${SHARD} \
   --repair \
-  --exp-all \
   --quote-per-var \
   --rpm 100000 \
   --checkpoint-every 1 \

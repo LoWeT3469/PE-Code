@@ -41,8 +41,6 @@ for env_path in ENV_CANDIDATES:
 
 # -------------------------------------------------------------------
 # Local HF/Open-weight chat wrapper
-# IMPORTANT: do NOT use tokenizer.apply_chat_template() here.
-# Some models/tokenizers reject system+user role patterns.
 # -------------------------------------------------------------------
 class _LocalChatCompletions:
     def __init__(self, model, tokenizer, device):
@@ -64,28 +62,44 @@ class _LocalChatCompletions:
             else:
                 user += content.strip() + "\n"
 
-        prompt = (
-            "[SYSTEM]\n"
-            f"{system.strip()}\n\n"
-            "[USER]\n"
-            f"{user.strip()}\n\n"
-            "[ASSISTANT]\n"
-        )
+        chat_messages = []
+        if system.strip():
+            chat_messages.append({"role": "system", "content": system.strip()})
+        if user.strip():
+            chat_messages.append({"role": "user", "content": user.strip()})
+
+        if hasattr(self.tokenizer, "apply_chat_template"):
+            prompt = self.tokenizer.apply_chat_template(
+                chat_messages,
+                tokenize=False,
+                add_generation_prompt=True,
+            )
+        else:
+            prompt = (
+                "[SYSTEM]\n"
+                f"{system.strip()}\n\n"
+                "[USER]\n"
+                f"{user.strip()}\n\n"
+                "[ASSISTANT]\n"
+            )
 
         max_new = int(os.environ.get("HF_MAX_NEW_TOKENS", os.environ.get("MISTRAL_MAX_NEW_TOKENS", "256")))
+        min_new = int(os.environ.get("HF_MIN_NEW_TOKENS", os.environ.get("MISTRAL_MIN_NEW_TOKENS", "1")))
         temperature = float(os.environ.get("HF_TEMPERATURE", os.environ.get("MISTRAL_TEMPERATURE", "0.0")))
         use_cache = os.environ.get("HF_USE_CACHE", os.environ.get("MISTRAL_USE_CACHE", "1")).strip() not in {
             "0", "false", "False"
         }
 
-        inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
+        inputs = self.tokenizer(prompt, return_tensors="pt")
+        model_device = next(self.model.parameters()).device
+        inputs = {k: v.to(model_device) for k, v in inputs.items()}
 
         generate_kwargs = {
             "max_new_tokens": max_new,
+            "min_new_tokens": min_new,
             "do_sample": (temperature > 0),
             "use_cache": use_cache,
             "pad_token_id": self.tokenizer.eos_token_id,
-            "eos_token_id": self.tokenizer.eos_token_id,
         }
         if temperature > 0:
             generate_kwargs["temperature"] = temperature
@@ -180,6 +194,8 @@ def create_llm_client(args):
             )
 
         tokenizer = AutoTokenizer.from_pretrained(model_id, use_fast=True)
+        if tokenizer.pad_token_id is None and tokenizer.eos_token_id is not None:
+            tokenizer.pad_token = tokenizer.eos_token
         model = AutoModelForCausalLM.from_pretrained(
             model_id,
             torch_dtype=None if use_4bit else torch_dtype,
