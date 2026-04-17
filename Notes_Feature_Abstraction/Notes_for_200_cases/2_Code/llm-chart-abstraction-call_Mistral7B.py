@@ -155,7 +155,7 @@ def create_llm_client(args):
         dtype_name = os.environ.get("MISTRAL_DTYPE", "bfloat16").strip().lower()
         if dtype_name == "bfloat16":
             torch_dtype = torch.bfloat16
-        elif dtype_name == "flocsat16":
+        elif dtype_name == "float16":
             torch_dtype = torch.float16
         else:
             sys.exit(f"Unsupported dtype '{dtype_name}'. Use bfloat16 or float16.")

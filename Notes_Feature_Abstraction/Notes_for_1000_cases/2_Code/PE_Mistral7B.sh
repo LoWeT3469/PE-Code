@@ -54,11 +54,11 @@ export MISTRAL_MODEL_DIR="/nfs/turbo/umms-atjanke/liuwent/Notes_Feature_Abstract
 # ------------------------------------------------------------------
 export MISTRAL_USE_4BIT=0
 export MISTRAL_DTYPE="bfloat16"
-export MISTRAL_MAX_NEW_TOKENS=1200
+export MISTRAL_MAX_NEW_TOKENS=128
 export MISTRAL_TEMPERATURE=0.0
 export MISTRAL_USE_CACHE=0
-export MISTRAL_CHUNK_TOKENS=9000
-export MISTRAL_MAX_CHUNKS=0
+export MISTRAL_CHUNK_TOKENS=1500
+export MISTRAL_MAX_CHUNKS=5
 
 export PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True"
 export TOKENIZERS_PARALLELISM=false
@@ -147,7 +147,6 @@ python -u ./batch-abstract-notes-logged_Mistral7B.py \
   --num-shards ${NUM_SHARDS} \
   --shard-index ${SHARD} \
   --repair \
-  --exp-all \
   --quote-per-var \
   --rpm 100000 \
   --checkpoint-every 1 \

@@ -9,7 +9,7 @@
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=192G
 #SBATCH --gres=gpu:1
-#SBATCH --array=0-7%2
+#SBATCH --array=0-39%4
 #SBATCH --time=6-23:59:59
 #SBATCH --output=./%x-%A_%a.out
 #SBATCH --error=./%x-%A_%a.err
@@ -54,6 +54,7 @@ export HF_MODEL_ID="cookinai/OrcaHermes-Mistral-70B-miqu"
 export HF_USE_4BIT=1
 export HF_DTYPE="bfloat16"
 export HF_MAX_NEW_TOKENS=1200
+export HF_MIN_NEW_TOKENS=1
 export HF_TEMPERATURE=0.0
 export HF_USE_CACHE=0
 
@@ -141,7 +142,7 @@ fi
 # Run shard
 # ------------------------------------------------------------------
 echo "=== RUN BATCH SHARD ==="
-NUM_SHARDS=8
+NUM_SHARDS="${NUM_SHARDS:-40}"
 SHARD="${ARRAY_TASK_ID}"
 
 python -u ./batch-abstract-notes-logged_Mistral70B.py \
@@ -157,6 +158,7 @@ python -u ./batch-abstract-notes-logged_Mistral70B.py \
   --repair \
   --quote-per-var \
   --exp-all \
+  --timeout-s 1200 \
   --rpm 100000 \
   --checkpoint-every 1 \
   --json-out "debug-ct-reports-for-1000-cases-ct-schema-orcahermes70b-job${SLURM_JOB_ID:-local}-shard${SHARD}.json" \

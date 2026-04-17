@@ -10,7 +10,7 @@
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=192G
 #SBATCH --gres=gpu:1
-#SBATCH --array=0-7%2
+#SBATCH --array=0-31%4
 #SBATCH --time=6-23:59:59
 #SBATCH --output=./%x-%A_%a.out
 #SBATCH --error=./%x-%A_%a.err
@@ -39,6 +39,9 @@ OUTDIR="${WORKDIR}/3_Outputs"
 
 cd "$CODEDIR"
 mkdir -p "$OUTDIR"
+
+# Safe default for local bash testing
+ARRAY_TASK_ID="${SLURM_ARRAY_TASK_ID:-0}"
 
 # ------------------------------------------------------------------
 # Provider / model
@@ -76,8 +79,8 @@ echo "WORKDIR=$WORKDIR"
 echo "CODEDIR=$CODEDIR"
 echo "DATADIR=$DATADIR"
 echo "OUTDIR=$OUTDIR"
-echo "SLURM_JOB_ID=${SLURM_JOB_ID}"
-echo "SLURM_ARRAY_TASK_ID=${SLURM_ARRAY_TASK_ID}"
+echo "SLURM_JOB_ID=${SLURM_JOB_ID:-local}"
+echo "SLURM_ARRAY_TASK_ID=${ARRAY_TASK_ID}"
 which python
 python --version
 nvidia-smi
@@ -86,7 +89,7 @@ nvidia-smi
 # Smoke test on shard 0 only
 # Stream logs instead of hiding them
 # ------------------------------------------------------------------
-if [[ "${SLURM_ARRAY_TASK_ID}" == "0" ]]; then
+if [[ "${ARRAY_TASK_ID}" == "0" ]]; then
   echo "=== SINGLE NOTE SMOKE TEST (shard 0 only) ==="
   python -u - << 'PY'
 import pandas as pd
@@ -140,8 +143,8 @@ fi
 # Run shard
 # ------------------------------------------------------------------
 echo "=== RUN BATCH SHARD ==="
-NUM_SHARDS=8
-SHARD=${SLURM_ARRAY_TASK_ID}
+NUM_SHARDS="${NUM_SHARDS:-32}"
+SHARD="${ARRAY_TASK_ID}"
 
 python -u ./batch-abstract-notes-logged_Mistral70B.py \
   --input ../1_Data/notes-for-200-cases.csv \
