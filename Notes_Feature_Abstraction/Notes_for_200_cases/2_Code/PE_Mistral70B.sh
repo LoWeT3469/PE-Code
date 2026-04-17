@@ -11,6 +11,7 @@
 #SBATCH --mem=192G
 #SBATCH --gres=gpu:1
 #SBATCH --array=0-15%4
+# Default: 16 shards for 200-note 70B runs (override with sbatch --array and NUM_SHARDS).
 #SBATCH --time=6-23:59:59
 #SBATCH --output=./%x-%A_%a.out
 #SBATCH --error=./%x-%A_%a.err

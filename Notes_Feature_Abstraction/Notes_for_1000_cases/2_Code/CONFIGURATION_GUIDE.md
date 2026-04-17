@@ -58,9 +58,9 @@ sbatch ../../Notes_for_200_cases/2_Code/PE_Mistral70B.sh
 NUM_SHARDS=80 sbatch --array=0-79%8 PE_Mistral70B.sh
 ```
 
-### Example: 200-case 70B with 40 shards, 6 running concurrently
+### Example: 200-case 70B with 24 shards, 6 running concurrently
 ```bash
-NUM_SHARDS=40 sbatch --array=0-39%6 ../../Notes_for_200_cases/2_Code/PE_Mistral70B.sh
+NUM_SHARDS=24 sbatch --array=0-23%6 ../../Notes_for_200_cases/2_Code/PE_Mistral70B.sh
 ```
 
 ## 4) How to tune runtime speed vs quality
