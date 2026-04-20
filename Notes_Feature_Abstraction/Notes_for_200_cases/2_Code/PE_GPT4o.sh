@@ -1,96 +1,58 @@
 #!/bin/bash
 # LWT
 
-#SBATCH --job-name=PE_Mistral7B
+#SBATCH --job-name=PE_GPT4o
 #SBATCH --account=atjanke0
-#SBATCH --qos=normal
-#SBATCH --partition=gpu-rtx6000
+#SBATCH --partition=standard
+#SBATCH --time=24:00:00
 #SBATCH --nodes=1
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=8
+#SBATCH --cpus-per-task=2
 #SBATCH --mem=64G
-#SBATCH --gres=gpu:1
-#SBATCH --array=0-7
-#SBATCH --time=12:00:00
-#SBATCH --output=./%x-%A_%a.out
-#SBATCH --error=./%x-%A_%a.err
-#SBATCH --mail-user=liuwent@umich.edu
+#SBATCH --output=./%x-%j
+#SBATCH --error=./%x-%j
+#SBATCH --mail-user=liuwent@med.umich.edu
 #SBATCH --mail-type=BEGIN,END,FAIL
 
-set -euo pipefail
+set -e -o pipefail
 
-module purge
-module load cuda/12.8.1
-module load gcc/10.3.0
+if [[ ${SLURM_JOB_NODELIST:-} ]]; then
+  echo "Running on:"; scontrol show hostnames "$SLURM_JOB_NODELIST"
+fi
 
-set +u
+# ---- Conda env ----
 source "$HOME/.bashrc"
-set -u
 conda activate PE
-export PYTHONNOUSERSITE=1
 
+# ---- Paths ----
 WORKDIR="/nfs/turbo/umms-atjanke/liuwent/Notes_Feature_Abstraction"
-cd "$WORKDIR"
+cd "$WORKDIR" || exit 1
+
+# ---- API env + proxy (exactly like your CLI) ----
+set -a
+source "/nfs/turbo/umms-atjanke/liuwent/gpt.env"
+set +a
+export HTTPS_PROXY="http://proxy1.arc-ts.umich.edu:3128/"
+export HTTP_PROXY="$HTTPS_PROXY"
+export NO_PROXY=""
+export no_proxy=""
+
+# >>> key fix so SDKs/wrappers hit UM-GPT base <<<
+export OPENAI_BASE_URL="${OPENAI_BASE_URL:-$OPENAI_API_BASE}"
+
+echo "DEBUG: BASE_URL=$OPENAI_BASE_URL  API_BASE=$OPENAI_API_BASE  MODEL=${MODEL:-<unset>}"
+
 mkdir -p outputs
 
 SCHEMA_XLSX="/nfs/turbo/umms-atjanke/liuwent/Schema/20260415/pe-schema.xlsx"
 echo "Using schema: ${SCHEMA_XLSX}"
 
-export LLM_API_PROVIDER="mistral_local"
-export MISTRAL_MODEL_DIR="/nfs/turbo/umms-atjanke/liuwent/Notes_Feature_Abstraction/Mistral/7B"
-
-export MISTRAL_USE_4BIT=0
-export MISTRAL_MAX_NEW_TOKENS=1200
-export MISTRAL_TEMPERATURE=0.0
-export MISTRAL_USE_CACHE=0
-
-export MISTRAL_CHUNK_TOKENS=9000
-export MISTRAL_MAX_CHUNKS=0
-
-export PYTORCH_ALLOC_CONF="expandable_segments:True"
-
-echo "=== ENV ==="
-hostname
-echo "WORKDIR=$WORKDIR"
-echo "SLURM_ARRAY_TASK_ID=${SLURM_ARRAY_TASK_ID}"
-nvidia-smi
-
-# Optional: keep smoke test for shard 0 only (saves time)
-if [[ "${SLURM_ARRAY_TASK_ID}" == "0" ]]; then
-  echo "=== SINGLE NOTE SMOKE TEST (shard 0 only) ==="
-  python - << 'PY'
-import pandas as pd, subprocess, sys
-df = pd.read_csv("./notes-for-200-cases.csv")
-note = str(df["Text"].iloc[0])
-cmd = [sys.executable, "./llm-chart-abstraction-call_Mistral7B.py",
-       "--api-provider", "mistral_local",
-       "--var", "shortness_of_breath:presence:Does the note indicate SOB?",
-       "--repair"]
-p = subprocess.run(cmd, input=note, text=True, capture_output=True)
-print("returncode:", p.returncode)
-print("STDERR tail:", (p.stderr or "")[-800:])
-print("STDOUT head:", (p.stdout or "")[:500])
-PY
-fi
-
-echo "=== RUN BATCH SHARD ==="
-NUM_SHARDS=8
-SHARD=${SLURM_ARRAY_TASK_ID}
-
-python -u ./batch-abstract-notes-logged_Mistral7B.py \
+# ---- Run (match your CLI: use python -u, not srun) ----
+python -u ./batch-abstract-notes-logged.py \
   --input ./notes-for-200-cases.csv \
-  --output notes-for-200-cases-18-features-mistral7b_shard${SHARD}.parquet \
+  --output ./notes-for-200-cases-18-features-gpt4o.parquet \
   --note-col Text \
   --id-col EncounterCsn \
-  --script ./llm-chart-abstraction-call_Mistral7B.py \
-  --model mistral-7b \
-  --api-provider mistral_local \
-  --num-shards ${NUM_SHARDS} \
-  --shard-index ${SHARD} \
-  --repair \
-  --rpm 100000 \
-  --checkpoint-every 1 \
-  --json-out "debug-${SLURM_JOB_ID}-shard${SHARD}.json" \
+  --script ./llm-chart-abstraction-call.py \
   --var "shortness_of_breath:presence:Does the note indicate the patient is complaining about shortness of breath?" \
   --var "chest_pain:presence:Does the note indicate the patient is complaining about chest pain?" \
   --var "pleuritic_pain:presence:Does the note indicate that there is a 'pleuritic' pain (a chest, back, or other thoracic or truncal pain that is explicitly worse with breathing)? If the patient does *not* have any pain complaint, then mark 'explicitly absent.'" \
@@ -108,4 +70,11 @@ python -u ./batch-abstract-notes-logged_Mistral7B.py \
   --var "estrogen_use_present:presence:Check for current use of estrogen-containing medications, such as oral contraceptives, hormone replacement therapy, or transdermal estrogen. Do NOT include IUD as part of this (like NuvaRing), as we are only looking for oral estrogen. If use is explicitly denied, mark as “explicitly absent.”" \
   --var "pregnancy:yn:Does the note indicate that the patient is pregnant?" \
   --var "perc_mentioned:yn:Does the note mention the PERC or 'PE Rule Out' criteria?" \
-  --var "wells_mentioned:yn:Does the note mention the Wells criteria?"
+  --var "wells_mentioned:yn:Does the note mention the Wells criteria?" \
+  --exp-all \
+  --quote-per-var \
+  --repair \
+  --rps 2 \
+  --checkpoint-every 10 \
+  --model gpt-4o \
+  --json-out "./outputs/debug-${SLURM_JOB_ID:-local}-gpt4o.json"
