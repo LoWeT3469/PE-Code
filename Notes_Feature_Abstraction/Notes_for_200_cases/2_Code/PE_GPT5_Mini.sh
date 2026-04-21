@@ -24,7 +24,7 @@ source "$HOME/.bashrc"
 conda activate PE
 
 # ---- Paths ----
-WORKDIR="/nfs/turbo/umms-atjanke/liuwent/Notes_Feature_Abstraction"
+WORKDIR="/nfs/turbo/umms-atjanke/liuwent/Notes_Feature_Abstraction/Notes_for_200_cases/2_Code"
 cd "$WORKDIR" || exit 1
 
 # ---- API env + proxy (exactly like your CLI) ----
@@ -41,15 +41,15 @@ export OPENAI_BASE_URL="${OPENAI_BASE_URL:-$OPENAI_API_BASE}"
 
 echo "DEBUG: BASE_URL=$OPENAI_BASE_URL  API_BASE=$OPENAI_API_BASE  MODEL=${MODEL:-<unset>}"
 
-mkdir -p outputs
+mkdir -p ../3_Outputs
 
 SCHEMA_XLSX="/nfs/turbo/umms-atjanke/liuwent/Schema/20260415/pe-schema.xlsx"
 echo "Using schema: ${SCHEMA_XLSX}"
 
 # ---- Run (match your CLI: use python -u, not srun) ----
 python -u ./batch-abstract-notes-logged.py \
-  --input ./notes-for-200-cases.csv \
-  --output ./notes-for-200-cases-18-features-gpt5-mini.parquet \
+  --input ../1_Data/notes-for-200-cases.csv \
+  --output ../3_Outputs/notes-for-200-cases-18-features-gpt5-mini.parquet \
   --note-col Text \
   --id-col EncounterCsn \
   --script ./llm-chart-abstraction-call.py \
@@ -77,4 +77,4 @@ python -u ./batch-abstract-notes-logged.py \
   --rps 2 \
   --checkpoint-every 10 \
   --model gpt-5-mini \
-  --json-out "./outputs/debug-${SLURM_JOB_ID:-local}-mini.json"
+  --json-out "../3_Outputs/debug-${SLURM_JOB_ID:-local}-mini.json"
