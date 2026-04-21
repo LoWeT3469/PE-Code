@@ -11,7 +11,7 @@
 #SBATCH --mem=192G
 #SBATCH --gres=gpu:1
 #SBATCH --array=0-13%4
-#SBATCH --time=6-23:59:59
+#SBATCH --time=7-00:00:00
 #SBATCH --output=./%x-%A_%a.out
 #SBATCH --error=./%x-%A_%a.err
 #SBATCH --mail-user=liuwent@umich.edu

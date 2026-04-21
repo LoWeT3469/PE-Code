@@ -11,7 +11,7 @@
 #SBATCH --mem=64G
 #SBATCH --gres=gpu:1
 #SBATCH --array=0-7
-#SBATCH --time=12:00:00
+#SBATCH --time=3-00:00:00
 #SBATCH --output=./%x-%A_%a.out
 #SBATCH --error=./%x-%A_%a.err
 #SBATCH --mail-user=liuwent@umich.edu
@@ -36,9 +36,6 @@ OUTDIR="${WORKDIR}/3_Outputs"
 
 cd "$CODEDIR"
 mkdir -p "$OUTDIR"
-
-SCHEMA_XLSX="/nfs/turbo/umms-atjanke/liuwent/Schema/20260415/pe-schema.xlsx"
-echo "Using schema: ${SCHEMA_XLSX}"
 
 SCHEMA_XLSX="/nfs/turbo/umms-atjanke/liuwent/Schema/20260415/pe-schema.xlsx"
 echo "Using schema: ${SCHEMA_XLSX}"
