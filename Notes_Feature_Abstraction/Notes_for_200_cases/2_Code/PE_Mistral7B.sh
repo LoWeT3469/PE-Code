@@ -29,9 +29,16 @@ set -u
 conda activate PE
 export PYTHONNOUSERSITE=1
 
-WORKDIR="/nfs/turbo/umms-atjanke/liuwent/Notes_Feature_Abstraction"
-cd "$WORKDIR"
-mkdir -p outputs
+WORKDIR="/nfs/turbo/umms-atjanke/liuwent/Notes_Feature_Abstraction/Notes_for_200_cases"
+CODEDIR="${WORKDIR}/2_Code"
+DATADIR="${WORKDIR}/1_Data"
+OUTDIR="${WORKDIR}/3_Outputs"
+
+cd "$CODEDIR"
+mkdir -p "$OUTDIR"
+
+SCHEMA_XLSX="/nfs/turbo/umms-atjanke/liuwent/Schema/20260415/pe-schema.xlsx"
+echo "Using schema: ${SCHEMA_XLSX}"
 
 SCHEMA_XLSX="/nfs/turbo/umms-atjanke/liuwent/Schema/20260415/pe-schema.xlsx"
 echo "Using schema: ${SCHEMA_XLSX}"
@@ -52,6 +59,9 @@ export PYTORCH_ALLOC_CONF="expandable_segments:True"
 echo "=== ENV ==="
 hostname
 echo "WORKDIR=$WORKDIR"
+echo "CODEDIR=$CODEDIR"
+echo "DATADIR=$DATADIR"
+echo "OUTDIR=$OUTDIR"
 echo "SLURM_ARRAY_TASK_ID=${SLURM_ARRAY_TASK_ID}"
 nvidia-smi
 
@@ -60,9 +70,12 @@ if [[ "${SLURM_ARRAY_TASK_ID}" == "0" ]]; then
   echo "=== SINGLE NOTE SMOKE TEST (shard 0 only) ==="
   python - << 'PY'
 import pandas as pd, subprocess, sys
-df = pd.read_csv("./notes-for-200-cases.csv")
+from pathlib import Path
+codedir = Path(".").resolve()
+datadir = codedir.parent / "1_Data"
+df = pd.read_csv(datadir / "notes-for-200-cases.csv")
 note = str(df["Text"].iloc[0])
-cmd = [sys.executable, "./llm-chart-abstraction-call_Mistral7B.py",
+cmd = [sys.executable, str(codedir / "llm-chart-abstraction-call_Mistral7B.py"),
        "--api-provider", "mistral_local",
        "--var", "shortness_of_breath:presence:Does the note indicate SOB?",
        "--repair"]
@@ -74,11 +87,11 @@ PY
 fi
 
 echo "=== RUN BATCH SHARD ==="
-NUM_SHARDS=8
+NUM_SHARDS="${NUM_SHARDS:-8}"
 SHARD=${SLURM_ARRAY_TASK_ID}
 
 python -u ./batch-abstract-notes-logged_Mistral7B.py \
-  --input ./notes-for-200-cases.csv \
+  --input ../1_Data/notes-for-200-cases.csv \
   --output notes-for-200-cases-18-features-mistral7b_shard${SHARD}.parquet \
   --note-col Text \
   --id-col EncounterCsn \

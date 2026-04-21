@@ -653,11 +653,24 @@ def merge_json_partials(client, model_name: str, system_prompt: str, partials: L
     return text, resp
 
 
+def _usage_counts(resp: Any) -> Tuple[int, int, int]:
+    usage = getattr(resp, "usage", None)
+    if usage is None:
+        return 0, 0, 0
+    prompt = int(getattr(usage, "prompt_tokens", 0) or 0)
+    completion = int(getattr(usage, "completion_tokens", 0) or 0)
+    total = int(getattr(usage, "total_tokens", prompt + completion) or 0)
+    return prompt, completion, total
+
+
 # -------------------------------------------------------------------
 # Main
 # -------------------------------------------------------------------
 def main():
     final_resp = None
+    usage_input_tokens = 0
+    usage_output_tokens = 0
+    usage_total_tokens = 0
 
     ap = argparse.ArgumentParser(description="Extract structured vars from a clinical note via GPT Toolkit.")
     ap.add_argument("--note-file", help="Path to note text file (or pipe via stdin).")
@@ -724,6 +737,10 @@ def main():
                     {"role": "user", "content": map_user},
                 ],
             )
+            p_tok, c_tok, t_tok = _usage_counts(resp_i)
+            usage_input_tokens += p_tok
+            usage_output_tokens += c_tok
+            usage_total_tokens += t_tok
             last_map_resp = resp_i
             partials.append(resp_i.choices[0].message.content.strip())
 
@@ -732,6 +749,10 @@ def main():
             final_resp = last_map_resp
         else:
             text_out, final_resp = merge_json_partials(client, args.model, prompt, partials)
+            p_tok, c_tok, t_tok = _usage_counts(final_resp)
+            usage_input_tokens += p_tok
+            usage_output_tokens += c_tok
+            usage_total_tokens += t_tok
 
     else:
         messages = [
@@ -744,6 +765,10 @@ def main():
         )
         text_out = resp.choices[0].message.content.strip()
         final_resp = resp
+        p_tok, c_tok, t_tok = _usage_counts(resp)
+        usage_input_tokens += p_tok
+        usage_output_tokens += c_tok
+        usage_total_tokens += t_tok
 
     try:
         parsed = json.loads(text_out)
@@ -779,7 +804,13 @@ def main():
                 output[quote_key] = parsed.get(quote_key)
             output[span_key] = parsed.get(span_key)
 
-    if final_resp is not None and hasattr(final_resp, "usage") and final_resp.usage:
+    if usage_total_tokens > 0:
+        output["_usage"] = {
+            "input_tokens": usage_input_tokens,
+            "output_tokens": usage_output_tokens,
+            "total_tokens": usage_total_tokens,
+        }
+    elif final_resp is not None and hasattr(final_resp, "usage") and final_resp.usage:
         output["_usage"] = {
             "input_tokens": final_resp.usage.prompt_tokens,
             "output_tokens": final_resp.usage.completion_tokens,

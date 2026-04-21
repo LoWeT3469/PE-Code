@@ -10,7 +10,7 @@
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=192G
 #SBATCH --gres=gpu:1
-#SBATCH --array=0-31%4
+#SBATCH --array=0-13%4
 #SBATCH --time=6-23:59:59
 #SBATCH --output=./%x-%A_%a.out
 #SBATCH --error=./%x-%A_%a.err
@@ -146,7 +146,7 @@ fi
 # Run shard
 # ------------------------------------------------------------------
 echo "=== RUN BATCH SHARD ==="
-NUM_SHARDS="${NUM_SHARDS:-32}"
+NUM_SHARDS="${NUM_SHARDS:-14}"
 SHARD="${ARRAY_TASK_ID}"
 
 python -u ./batch-abstract-notes-logged_Mistral70B.py \
