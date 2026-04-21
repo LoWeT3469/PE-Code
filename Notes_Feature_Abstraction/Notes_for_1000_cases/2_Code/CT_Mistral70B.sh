@@ -41,6 +41,8 @@ mkdir -p "$OUTDIR"
 
 # Safe default for local bash testing
 ARRAY_TASK_ID="${SLURM_ARRAY_TASK_ID:-0}"
+SCHEMA_XLSX="/nfs/turbo/umms-atjanke/liuwent/Schema/ct-chest-schema.xlsx"
+echo "Using schema: ${SCHEMA_XLSX}"
 
 # ------------------------------------------------------------------
 # Provider / model
@@ -157,7 +159,6 @@ python -u ./batch-abstract-notes-logged_Mistral70B.py \
   --shard-index ${SHARD} \
   --repair \
   --quote-per-var \
-  --exp-all \
   --timeout-s 1200 \
   --rpm 100000 \
   --checkpoint-every 1 \
@@ -170,7 +171,7 @@ python -u ./batch-abstract-notes-logged_Mistral70B.py \
   --var "alternative_diagnosis_present:yn:Does the report mention an alternative diagnosis that could explain symptoms, such as pneumonia, pleural effusion, pulmonary edema, pneumothorax, aortic pathology, or another acute chest process?" \
   --var "pneumonia_present:yn:Does the report mention pneumonia, infiltrate suspicious for infection, or consolidation consistent with pneumonia?" \
   --var "pleural_effusion_present:yn:Does the report mention a pleural effusion?" \
-  --var "pulmonary_edema_present:yn:Does the report mention pulmonary edema or CHF or fluid-overload-type lung findings?" \
+  --var "pulmonary_edema_present:yn:Does the report mention pulmonary edema or CHF/fluid overload type lung findings?" \
   --var "pneumothorax_present:yn:Does the report mention pneumothorax?" \
   --var "aortic_pathology_present:yn:Does the report mention acute aortic pathology such as dissection, aneurysm rupture, or intramural hematoma?" \
   --var "chronic_pe_only:yn:Does the report describe chronic pulmonary embolism findings without acute pulmonary embolism?" \

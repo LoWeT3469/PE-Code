@@ -42,6 +42,8 @@ mkdir -p "$OUTDIR"
 
 # Safe default for local bash testing
 ARRAY_TASK_ID="${SLURM_ARRAY_TASK_ID:-0}"
+SCHEMA_XLSX="/nfs/turbo/umms-atjanke/liuwent/Schema/20260415/pe-schema.xlsx"
+echo "Using schema: ${SCHEMA_XLSX}"
 
 # ------------------------------------------------------------------
 # Provider / model
@@ -158,26 +160,25 @@ python -u ./batch-abstract-notes-logged_Mistral70B.py \
   --shard-index ${SHARD} \
   --repair \
   --quote-per-var \
-  --exp-all \
   --timeout-s 1200 \
   --rpm 100000 \
   --checkpoint-every 1 \
   --json-out "debug-notes-for-1000-cases-pe-schema-orcahermes70b-job${SLURM_JOB_ID:-local}-shard${SHARD}.json" \
   --var "shortness_of_breath:presence:Does the note indicate the patient is complaining about shortness of breath?" \
   --var "chest_pain:presence:Does the note indicate the patient is complaining about chest pain?" \
-  --var "pleuritic_pain:presence:Does the note indicate that there is a pleuritic pain, meaning a chest, back, or other thoracic or truncal pain explicitly worse with breathing? If the patient does not have any pain complaint, then mark explicitly absent." \
+  --var "pleuritic_pain:presence:Does the note indicate that there is a 'pleuritic' pain (a chest, back, or other thoracic or truncal pain that is explicitly worse with breathing)? If the patient does *not* have any pain complaint, then mark 'explicitly absent.'" \
   --var "back_pain:presence:Does the note indicate the patient is complaining about back pain?" \
   --var "cough:presence:Does the note indicate the patient is complaining of cough?" \
-  --var "hemoptysis_present:presence:Look for any mention of the patient coughing up blood. Include synonyms like bloody sputum or blood-tinged mucus. If not described, mark as not mentioned. If cough is explicitly absent, then mark hemoptysis as explicitly absent." \
+  --var "hemoptysis_present:presence:Look for any mention of the patient coughing up blood. Include synonyms like “bloody sputum” or “blood-tinged mucus.” If not described, mark as “not mentioned.” If cough is 'explicitly absent', then mark hemotypsis as 'explicitly absent.'" \
   --var "syncope:presence:Does the note indicate syncope or passing out or similar?" \
-  --var "exertional_symptoms:presence:Does the note indicate problems with exertion, like exertional shortness of breath, or feeling weak with walking? If the patient has no symptoms, mark explicitly absent." \
-  --var "unilateral_leg_swelling_present:presence:Look for a physical exam or history describing one-sided leg swelling or asymmetry. Include phrases like right calf swelling or asymmetric edema. Do not include joint swelling alone, such as right knee swelling, because that is not indicative of one-sided leg swelling or asymmetry." \
-  --var "prior_dvt_pe_present:presence:Determine whether the patient has a documented history of DVT or pulmonary embolism. Accept phrases like prior clot, history of PE, or old DVT." \
+  --var "exertional_symptoms:presence:Does the note indicate problems with 'exertion,' like exertional shortness of breath, or feeling weak with walking? If the patient has no symptoms, mark as 'explicitly absent.'" \
+  --var "unilateral_leg_swelling_present:presence:Look for a physical exam or history describing one-sided leg swelling or asymmetry. Include phrases like “right calf swelling,” “asymmetric edema.” Do not include joint swelling alone (like 'right knee swelling'), as this is not indicative of one-sided leg swelling or asymmetry. Mark as “present,” “explicitly absent,” or “not mentioned.”" \
+  --var "prior_dvt_pe_present:presence:Determine whether the patient has a documented history of DVT or pulmonary embolism. Accept phrases like “prior clot,” “history of PE,” or “old DVT.” Mark as “present,” “explicitly absent,” or “not mentioned.”" \
   --var "recent_surgery:presence:Does the note indicate that the patient has had a recent surgery requiring general anesthesia, stated or implied to be recent, especially in the past 4 weeks?" \
   --var "recent_immobilization:presence:Does the note indicate the patient has had prolonged immobilization, stated or implied to be for 3 days or greater?" \
-  --var "recent_travel:presence:Does the note indicate recent long-distance travel, either explicitly prolonged or implied to be lasting for 4 hours or greater?" \
-  --var "recent_or_active_malignancy:presence:Does the note indicate whether the patient has recent cancer within 6 months or active malignancy? If malignancy history is specified but reportedly treated or in remission without a specified timeframe within the preceding 6 months, mark explicitly absent." \
-  --var "estrogen_use_present:presence:Check for current use of estrogen-containing medications, such as oral contraceptives or hormone replacement therapy. Do not include IUDs or vaginal rings. If use is explicitly denied, mark explicitly absent." \
+  --var "recent_travel:presence:Does the note indicate recent long-distance travel, either explicitly 'prolonger' or implied to be lasting for 4 hours or greater?" \
+  --var "recent_or_active_malignancy:presence:Does the note indicate whether the patient has recent (prior 6 months) or active malignancy? If malignancy history is specified but reportedly treated/in remission or similar without specified timeframe within preceding 6 months, mark as explicitly absent." \
+  --var "estrogen_use_present:presence:Check for current use of estrogen-containing medications, such as oral contraceptives, hormone replacement therapy, or transdermal estrogen. Do NOT include IUD as part of this (like NuvaRing), as we are only looking for oral estrogen. If use is explicitly denied, mark as “explicitly absent.”" \
   --var "pregnancy:yn:Does the note indicate that the patient is pregnant?" \
-  --var "perc_mentioned:yn:Does the note mention the PERC or PE Rule Out criteria?" \
+  --var "perc_mentioned:yn:Does the note mention the PERC or 'PE Rule Out' criteria?" \
   --var "wells_mentioned:yn:Does the note mention the Wells criteria?"
