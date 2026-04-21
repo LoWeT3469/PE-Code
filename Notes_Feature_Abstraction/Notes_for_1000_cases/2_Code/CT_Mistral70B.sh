@@ -41,6 +41,8 @@ mkdir -p "$OUTDIR"
 
 # Safe default for local bash testing
 ARRAY_TASK_ID="${SLURM_ARRAY_TASK_ID:-0}"
+SCHEMA_XLSX="/nfs/turbo/umms-atjanke/liuwent/Schema/ct-chest-schema.xlsx"
+echo "Using schema: ${SCHEMA_XLSX}"
 
 # ------------------------------------------------------------------
 # Provider / model
@@ -147,7 +149,7 @@ SHARD="${ARRAY_TASK_ID}"
 
 python -u ./batch-abstract-notes-logged_Mistral70B.py \
   --input ../1_Data/ct-reports-for-1000-cases.csv \
-  --output "ct-reports-for-1000-cases-ct-schema-orcahermes70b_shard${SHARD}.parquet" \
+  --output "../3_Outputs/ct-reports-for-1000-cases-ct-schema-orcahermes70b_shard${SHARD}.parquet" \
   --note-col Text \
   --id-col EncounterCsn \
   --script ./llm-chart-abstraction-call_Mistral70B.py \
@@ -157,11 +159,10 @@ python -u ./batch-abstract-notes-logged_Mistral70B.py \
   --shard-index ${SHARD} \
   --repair \
   --quote-per-var \
-  --exp-all \
   --timeout-s 1200 \
   --rpm 100000 \
   --checkpoint-every 1 \
-  --json-out "debug-ct-reports-for-1000-cases-ct-schema-orcahermes70b-job${SLURM_JOB_ID:-local}-shard${SHARD}.json" \
+  --json-out "../3_Outputs/debug-ct-reports-for-1000-cases-ct-schema-orcahermes70b-job${SLURM_JOB_ID:-local}-shard${SHARD}.json" \
   --var "acute_pe_present:yn:Does the CT chest radiology report indicate an acute pulmonary embolism? Look for explicit language such as acute pulmonary embolism, filling defect consistent with PE, or similar. If the report describes only chronic PE findings without acute findings, mark no." \
   --var "pe_size:presence:What is the most proximal extent of PE described in the report? Use present for a described category and explicitly absent if a more proximal category is ruled out. Only answer meaningfully if acute_pe_present is yes." \
   --var "pe_distribution:presence:Does the report indicate PE involves the left pulmonary vasculature, the right pulmonary vasculature, or both bilateral? A saddle PE should be considered bilateral. If PE is confirmed but not clearly lateralized, mark not mentioned." \
@@ -170,7 +171,7 @@ python -u ./batch-abstract-notes-logged_Mistral70B.py \
   --var "alternative_diagnosis_present:yn:Does the report mention an alternative diagnosis that could explain symptoms, such as pneumonia, pleural effusion, pulmonary edema, pneumothorax, aortic pathology, or another acute chest process?" \
   --var "pneumonia_present:yn:Does the report mention pneumonia, infiltrate suspicious for infection, or consolidation consistent with pneumonia?" \
   --var "pleural_effusion_present:yn:Does the report mention a pleural effusion?" \
-  --var "pulmonary_edema_present:yn:Does the report mention pulmonary edema or CHF or fluid-overload-type lung findings?" \
+  --var "pulmonary_edema_present:yn:Does the report mention pulmonary edema or CHF/fluid overload type lung findings?" \
   --var "pneumothorax_present:yn:Does the report mention pneumothorax?" \
   --var "aortic_pathology_present:yn:Does the report mention acute aortic pathology such as dissection, aneurysm rupture, or intramural hematoma?" \
   --var "chronic_pe_only:yn:Does the report describe chronic pulmonary embolism findings without acute pulmonary embolism?" \
