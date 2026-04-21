@@ -149,7 +149,7 @@ SHARD="${ARRAY_TASK_ID}"
 
 python -u ./batch-abstract-notes-logged_Mistral70B.py \
   --input ../1_Data/ct-reports-for-1000-cases.csv \
-  --output "ct-reports-for-1000-cases-ct-schema-orcahermes70b_shard${SHARD}.parquet" \
+  --output "../3_Outputs/ct-reports-for-1000-cases-ct-schema-orcahermes70b_shard${SHARD}.parquet" \
   --note-col Text \
   --id-col EncounterCsn \
   --script ./llm-chart-abstraction-call_Mistral70B.py \
@@ -162,7 +162,7 @@ python -u ./batch-abstract-notes-logged_Mistral70B.py \
   --timeout-s 1200 \
   --rpm 100000 \
   --checkpoint-every 1 \
-  --json-out "debug-ct-reports-for-1000-cases-ct-schema-orcahermes70b-job${SLURM_JOB_ID:-local}-shard${SHARD}.json" \
+  --json-out "../3_Outputs/debug-ct-reports-for-1000-cases-ct-schema-orcahermes70b-job${SLURM_JOB_ID:-local}-shard${SHARD}.json" \
   --var "acute_pe_present:yn:Does the CT chest radiology report indicate an acute pulmonary embolism? Look for explicit language such as acute pulmonary embolism, filling defect consistent with PE, or similar. If the report describes only chronic PE findings without acute findings, mark no." \
   --var "pe_size:presence:What is the most proximal extent of PE described in the report? Use present for a described category and explicitly absent if a more proximal category is ruled out. Only answer meaningfully if acute_pe_present is yes." \
   --var "pe_distribution:presence:Does the report indicate PE involves the left pulmonary vasculature, the right pulmonary vasculature, or both bilateral? A saddle PE should be considered bilateral. If PE is confirmed but not clearly lateralized, mark not mentioned." \

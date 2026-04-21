@@ -140,7 +140,7 @@ SHARD="${ARRAY_TASK_ID}"
 
 python -u ./batch-abstract-notes-logged_Mistral7B.py \
   --input ../1_Data/notes-for-1000-cases.csv \
-  --output "notes-for-1000-cases-pe-schema-mistral7b_shard${SHARD}.parquet" \
+  --output "../3_Outputs/notes-for-1000-cases-pe-schema-mistral7b_shard${SHARD}.parquet" \
   --note-col Text \
   --id-col EncounterCsn \
   --script ./llm-chart-abstraction-call_Mistral7B.py \
@@ -152,7 +152,7 @@ python -u ./batch-abstract-notes-logged_Mistral7B.py \
   --quote-per-var \
   --rpm 100000 \
   --checkpoint-every 1 \
-  --json-out "debug-notes-for-1000-cases-pe-schema-mistral7b-job${SLURM_JOB_ID:-local}-shard${SHARD}.json" \
+  --json-out "../3_Outputs/debug-notes-for-1000-cases-pe-schema-mistral7b-job${SLURM_JOB_ID:-local}-shard${SHARD}.json" \
   --var "shortness_of_breath:presence:Does the note indicate the patient is complaining about shortness of breath?" \
   --var "chest_pain:presence:Does the note indicate the patient is complaining about chest pain?" \
   --var "pleuritic_pain:presence:Does the note indicate that there is a 'pleuritic' pain (a chest, back, or other thoracic or truncal pain that is explicitly worse with breathing)? If the patient does *not* have any pain complaint, then mark 'explicitly absent.'" \

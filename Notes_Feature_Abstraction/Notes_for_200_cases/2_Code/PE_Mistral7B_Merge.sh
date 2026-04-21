@@ -1,17 +1,17 @@
 python - <<'PY'
 import glob, pandas as pd
-files = sorted(glob.glob("./outputs/notes-for-200-cases-18-features-mistral7b_shard*.parquet"))
+files = sorted(glob.glob("../3_Outputs/notes-for-200-cases-18-features-mistral7b_shard*.parquet"))
 print("Found", len(files), "parquets")
 df = pd.concat([pd.read_parquet(f) for f in files], ignore_index=True)
 df = df.sort_values("EncounterCsn")
-df.to_parquet("./outputs/ALL_notes-for-200-cases-18-features-mistral7b.parquet", index=False)
-print("Wrote ./outputs/ALL_notes-for-200-cases-18-features-mistral7b.parquet with rows:", len(df))
+df.to_parquet("../3_Outputs/ALL_notes-for-200-cases-18-features-mistral7b.parquet", index=False)
+print("Wrote ../3_Outputs/ALL_notes-for-200-cases-18-features-mistral7b.parquet with rows:", len(df))
 PY
 
 python - <<'PY'
 import glob, json
 
-files = sorted(glob.glob("./outputs/notes-for-200-cases-18-features-mistral7b_shard*.log.*.json"))
+files = sorted(glob.glob("../3_Outputs/notes-for-200-cases-18-features-mistral7b_shard*.log.*.json"))
 print("Found", len(files), "shard log JSONs")
 if not files:
     raise SystemExit("No shard log json files found.")
@@ -21,7 +21,7 @@ for fp in files:
     with open(fp, "r", encoding="utf-8") as f:
         merged.append(json.load(f))
 
-out_path = "./outputs/ALL_shard_runlogs.json"
+out_path = "../3_Outputs/ALL_shard_runlogs.json"
 with open(out_path, "w", encoding="utf-8") as f:
     json.dump(merged, f, indent=2)
 
@@ -32,7 +32,7 @@ python - <<'PY'
 import glob, json
 from collections import OrderedDict
 
-files = sorted(glob.glob("./outputs/debug*.json"))
+files = sorted(glob.glob("../3_Outputs/debug*.json"))
 print("Found", len(files), "debug json files")
 
 all_rows = []
@@ -61,7 +61,7 @@ for r in all_rows:
         no_id.append(r)
 
 merged = list(dedup.values()) + no_id
-out_path = "./outputs/ALL_debug_merged.json"
+out_path = "../3_Outputs/ALL_debug_merged.json"
 with open(out_path, "w", encoding="utf-8") as f:
     json.dump(merged, f, indent=2, ensure_ascii=False)
 

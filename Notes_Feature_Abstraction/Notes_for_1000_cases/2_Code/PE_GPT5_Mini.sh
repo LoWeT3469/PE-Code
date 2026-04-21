@@ -24,7 +24,10 @@ source "$HOME/.bashrc"
 conda activate PE
 
 WORKDIR="/nfs/turbo/umms-atjanke/liuwent/Notes_Feature_Abstraction/Notes_for_1000_cases"
-cd "$WORKDIR" || exit 1
+CODEDIR="${WORKDIR}/2_Code"
+DATADIR="${WORKDIR}/1_Data"
+OUTDIR="${WORKDIR}/3_Outputs"
+cd "$CODEDIR" || exit 1
 
 set -a
 source "/nfs/turbo/umms-atjanke/liuwent/gpt.env"
@@ -35,11 +38,13 @@ export NO_PROXY=""
 export no_proxy=""
 export OPENAI_BASE_URL="${OPENAI_BASE_URL:-$OPENAI_API_BASE}"
 
-mkdir -p outputs
+mkdir -p "$OUTDIR"
+SCHEMA_XLSX="/nfs/turbo/umms-atjanke/liuwent/Schema/20260415/pe-schema.xlsx"
+echo "Using schema: ${SCHEMA_XLSX}"
 
 python -u ./batch-abstract-notes-logged.py \
-  --input "./notes-for-1000-cases.csv" \
-  --output "notes-for-1000-cases-pe-schema-gpt5mini.parquet" \
+  --input ../1_Data/notes-for-1000-cases.csv \
+  --output ../3_Outputs/notes-for-1000-cases-pe-schema-gpt5mini.parquet \
   --note-col Text \
   --id-col EncounterCsn \
   --script ./llm-chart-abstraction-call.py \
@@ -67,4 +72,4 @@ python -u ./batch-abstract-notes-logged.py \
   --rps 2 \
   --checkpoint-every 10 \
   --model gpt-5-mini \
-  --json-out "notes-for-1000-cases-pe-schema-gpt5mini.json"
+  --json-out ../3_Outputs/notes-for-1000-cases-pe-schema-gpt5mini.json
