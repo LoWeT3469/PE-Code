@@ -1,7 +1,7 @@
 #!/bin/bash
 # LWT
 
-#SBATCH --job-name=PE_GPT5_Mini
+#SBATCH --job-name=PE_GPT4o
 #SBATCH --account=atjanke0
 #SBATCH --partition=standard
 #SBATCH --time=24:00:00
@@ -49,7 +49,7 @@ echo "Using schema: ${SCHEMA_XLSX}"
 # ---- Run (match your CLI: use python -u, not srun) ----
 python -u ./batch-abstract-notes-logged.py \
   --input ./notes-for-200-cases.csv \
-  --output ./notes-for-200-cases-18-features-gpt5-mini.parquet \
+  --output ./notes-for-200-cases-18-features-gpt4o.parquet \
   --note-col Text \
   --id-col EncounterCsn \
   --script ./llm-chart-abstraction-call.py \
@@ -76,5 +76,5 @@ python -u ./batch-abstract-notes-logged.py \
   --repair \
   --rps 2 \
   --checkpoint-every 10 \
-  --model gpt-5-mini \
-  --json-out "./outputs/debug-${SLURM_JOB_ID:-local}-mini.json"
+  --model gpt-4o \
+  --json-out "./outputs/debug-${SLURM_JOB_ID:-local}-gpt4o.json"
